@@ -1,0 +1,160 @@
+---
+title: "Portfolio"
+output:
+  html_document:
+    df_print: paged
+---
+
+Primero que nada cargamos las 3 librerías que vamos a utilizar.
+
+- Tidyverse es la que nos permite utilizar el comando %>% que es muy útil a la hora de estructurar las sentencias porque define cómo le pasamos los parámetros a las funciones. De esta forma podemos encadenar (y hacer pasar por un pipe los resultados) los resultados hacia la próxima función.
+
+- Tidyquant es un "empaquetador" de funciones, principalmente, pero le agrega la funcionalidad al estilo tidyverse, entonces permite utilizar el %>% que mencioné antes.
+
+- Ggplot2 es la librería que nos permite hacer gráficos. Tiene, también, su uso con %>% aunque no en todo sino sólo en su llamado. Lo van a notar porque las distintas "capas" que se van definiendo se agregan con +.
+
+- Hay una línea que oculté pero es la que hace que se tomen acentos y ñ, porque en mi máquina lo tenía seteado de otra forma por lo que estaba usando y cuando corran el archivo pueden no verse bien algunos caracteres.
+
+```{r include = FALSE,  echo=FALSE, warning=FALSE, message=FALSE, tidy=TRUE}
+Sys.setlocale(locale = "utf-8")
+```
+
+
+```{r,  warning=FALSE, message=FALSE, tidy=TRUE}
+library(tidyverse)
+library(tidyquant)
+library(ggplot2)
+```
+Hecho esto, definimos una variable que contiene los nombres, en este caso, de los ADRs argentinos.
+La definimos así:
+
+```{r,  warning=FALSE, message=FALSE, tidy=TRUE}
+ADR_Argentinos <- c("YPF", "GGAL", "SUPV", "BBAR", "BMA", "PAM", "TGS", "CEPU", "MELI", "CRESY", "DESP", "TEO", "EDN", "LOMA", "IRS", "BIOX", "IRCP")
+```
+
+Ahora definimos la variable Ra que lo que hace es contener el resultado de los precios de los ADR_Argentinos.
+Acá tenemos dos instancias bien diferenciadas:
+
+**Ra <-**
+
+Esto es una asignación de un valor (lo que vaya a la derecha) a una variable que se llama Ra.
+
+**ADR_Argentinos %>%**
+    **tq_get(get  = "stock.prices",**
+           **from = "2015-12-16",**
+           **to   = "2019-07-22") %>%**
+    **group_by(symbol) **
+    
+Esto quiere decir que la variable **ADR_Argentinos** (que definimos más arriba) se la vamos a "pasar" a la **función tq_get**, que es una función de la librería tidyquant y ésta va a ir a buscar los precios ("stock.prices") entre esas dos fechas. Y luego, con el **%>%** se la "pasamos" a la función **group_by** que las ordena por el campo symbol, que es el nombre del ticker.
+
+```{r,  warning=FALSE, message=FALSE, tidy=TRUE}
+Ra <- ADR_Argentinos %>%
+    tq_get(get  = "stock.prices",
+           from = "2015-12-16",
+           to   = "2019-07-22") %>%
+    group_by(symbol) 
+```
+
+Esto, lo que nos trajo, es una tabla con el symbol y el clásico OHLCVA. Cada "tabla" de cada ticker apilada sobre la otra.
+Listo principio y fin para que se vea como está armada:
+
+```{r,  warning=FALSE, message=FALSE, tidy=TRUE}
+head(Ra)
+tail(Ra)
+```
+
+Como se puede ver ahí, en la primer tabla está YPF que es la primera que pedimos y la última es IRCP que es IRSA Propiedades.
+
+Ahora vamos a quedarnos unicamente con la columna Adjusted, que es la que queremos utilizar para calcular los retornos. La vamos a asignar a una nueva variable que es Ra_mensual y se lo vamos a pedir a la función **tq_transmute** y le vamos a aclarar qué función vamos a utilizar (Nota: **tq_transmute** es una función que toma tablas de datos de acciones y le aplica una función que uno quiera. Para ver qué funciones están disponibles, y sorprenderse un rato, pongan **tq_transmute_fun_options()** en la consola y apreten Enter. Tienen desde calculo de retornos hasta SharpeRatios, RSI y demas). Y además, vamos a pedirle que los retornos los calcule "monthly". Podríamos pedirle anuales o simplemente diarios. Acá la función va a convertir nuestros datos que estan diarios a monthly y los va a calcular. Luego va a sacar aquellos registros que queden en cero (el típico es el primero, pero también puede haber registros en donde no hubo precios)
+
+```{r,  warning=FALSE, message=FALSE, tidy=TRUE}
+Ra_mensual <- Ra %>% tq_transmute(select     = adjusted, 
+                 mutate_fun = periodReturn, 
+                 period     = "monthly", 
+                 col_rename = "Ra")
+```
+
+Hecho esto, podemos graficarlo con ggplot. 
+
+```{r,  warning=FALSE, message=FALSE, tidy=TRUE}
+Ra_mensual %>%
+    ggplot(aes(x = date, y = Ra)) +
+    geom_bar(stat = "identity", width = 20) +
+    labs(title = "Retornos Mensuales",
+         subtitle = "ADRs Argentinos",
+         x = "", y = "Retornos mensuales") +
+    geom_smooth(method = "lm") +
+    theme_tq() +
+    scale_color_tq() +
+    scale_y_continuous(labels = scales::percent)
+```
+
+
+Ahora viene algo interesante. Nosotros bajamos los precios de todos los ADRs Argentinos.
+Supongamos entonces que tenemos un portfolio de ADRs Argentinos, pero que no compramos en proporciones iguales, por lo que tenemos más GGAL que YPF por ejemplo. Entonces vamos a utilizar la función tq_portfolio, que es la que nos permite asignarle una proporción a los activos (un weight se llama en la función)
+
+En este caso, y como para que quede bien evidente voy a utilizar 11 activos de los 17 y voy a asignar esa proporción en una variable que se llama asignación. Puede verse claramente que 11 de los 17, tienen una asignación de 1/11. Esto supone que todas las asignaciones o porcentaje de cada uno tienen que sumar 1 (no compliquemos las cosas con posiciones cortas). Entonces acá se ve claramente que hay 11 items que tienen 1/11 lo cuál = 1. (En el caso que no sumen 1, la función los "escalará" ajustando las proporciones para que todas sumen 1)
+
+```{r,  warning=FALSE, message=FALSE, tidy=TRUE}
+
+asignacion <- c(1/11, 1/11, 1/11, 1/11, 1/11, 1/11, 1/11, 1/11, 1/11, 0, 0, 0, 1/11, 1/11, 0, 0, 0)
+```
+Listo, hecho esto, podemos calcular qué pasó con los retornos, de la misma manera que lo hicimos con todos los precios de los ADRs cotizantes, pero en la proporción que asignamos más arriba. Lo vamos a guardar en la variable Port_Ret_men. De esta forma se puede ver fácilmente que podemos armar n portafolios y luego podemos incluso compararlos entre sí.
+
+Acá el uso de **tq_portfolio**:
+
+```{r,  warning=FALSE, message=FALSE, tidy=TRUE}
+Port_Ret_men <- Ra_mensual %>% 
+  tq_portfolio(assets_col = symbol,
+               returns_col = Ra,
+               weights = asignacion,
+               col_rename = "Ra")
+```
+
+Y ahora los graficamos, de exactamente la misma manera que antes, sólo cambiando los textos.
+```{r,  warning=FALSE, message=FALSE, tidy=TRUE}
+
+Port_Ret_men %>%
+    ggplot(aes(x = date, y = Ra)) +
+    geom_bar(stat = "identity", width = 20) +
+    labs(title = "Retornos Mensuales",
+         subtitle = "Portfolio Seleccionado",
+         x = "", y = "Retornos mensuales") +
+    geom_smooth(method = "lm") +
+    theme_tq() +
+    scale_color_tq() +
+    scale_y_continuous(labels = scales::percent)
+```
+
+Ahora un pequeño backtest con una inversión de X dolares en este portfolio que creamos y cuanto valdría al final del período
+Es básicamente el mismo uso de tq_portfolio, sólo que le agrega un parámetro **"wealth.index = TRUE"** que escala todo a $1. Luego se multiplica por el valor que uno quiere simular en el portfolio y listo. En este caso 10000
+
+```{r,  warning=FALSE, message=FALSE, tidy=TRUE}
+Port_Evol <- Ra_mensual %>% 
+  tq_portfolio(assets_col = symbol,
+               returns_col = Ra,
+               weights = asignacion,
+               col_rename = "Evolucion",
+               wealth.index = TRUE) %>% 
+    mutate(Evolucion = Evolucion * 10000)
+
+```
+
+Y lo graficamos de casi la misma forma, solo cambiamos el nombre de la columna porque ahora la llamamos Evolución y antes la llamamos Ra, ponemos geom_line para que dibuje una línea y no barras, le ponemos otro método de regresión sobre los datos (loess) y cambiamos la escala a dinero.
+
+
+```{r,  warning=FALSE, message=FALSE, tidy=TRUE}
+Port_Evol %>%
+    ggplot(aes(x = date, y = Evolucion)) +
+    geom_line(size = 2) +
+    labs(title = "Evolución de Portfolio con Inversión en t0 de $10.000",
+         subtitle = "Portfolio Seleccionado",
+         x = "", y = "Acumulado") +
+    geom_smooth(method = "loess") +
+    theme_tq() +
+    scale_color_tq() +
+    scale_y_continuous(labels = scales::dollar)
+```
+
+Bueno, espero que sirva y que ayude a que miren un poco más el mundo de los programas de análisis de datos (es mucho decir programación) porque hay mucho por descubrir y aportar.
+

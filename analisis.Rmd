@@ -1,0 +1,142 @@
+---
+title: "Analisis Portfolio"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+
+```{r uno, echo=FALSE, warning=FALSE, message=FALSE, tidy=TRUE}
+#Sys.setlocale(locale = "utf-8")
+options(Encoding="UTF-8")
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tidyquant)
+library(ggplot2)
+library(knitr)
+```
+
+
+Composición:
+
+- QQQ
+- XLK
+- SPY
+- XLF
+- ARKK
+- WCLD 
+
+
+
+
+```{r dos, echo=FALSE, warning=FALSE, message=FALSE, tidy=TRUE}
+# Fecha Inicio - Fin {.tabset .tabset-fade .tabset-pills}
+## 2019-01-01
+## 2020-08-06
+### End tabset
+ETF <- c("QQQ", "XLK", "SPY", "XLF", "ARKK", "WCLD")
+
+```
+
+```{r tres, echo=FALSE, warning=FALSE, message=FALSE, tidy=TRUE}
+
+fecha_inicio = "2019-01-01"
+fecha_fin = "2020-08-06"
+
+
+
+Retf <- ETF %>%
+    tq_get(get  = "stock.prices",
+           from = fecha_inicio,
+           to   = fecha_fin) %>%
+    group_by(symbol)
+
+
+Retf_diario <- Retf %>% tq_transmute(select     = adjusted, 
+                 mutate_fun = periodReturn, 
+                 period     = "daily", 
+                 col_rename = "Ra")
+
+```
+
+Vamos a ver los retornos de cada activo por separado.  
+<b>
+<b>
+
+```{r cuatro,  echo=FALSE, warning=FALSE, message=FALSE, tidy=TRUE}
+
+Retf_diario %>%
+    ggplot(aes(x = date, y = Ra, group = symbol)) +
+    geom_line(stat = "identity", width = 10) +
+    labs(title = "Retornos Diarios",
+         subtitle = "ETF",
+         x = "", y = "Retornos diarios") +
+    geom_smooth(method = "lm") +
+    theme_tq() +
+    scale_color_tq() +
+    scale_y_continuous(labels = scales::percent) +
+  facet_wrap(~symbol)
+```
+
+Asignamos el portfolio en partes iguales (1/n) y graficamos los retornos del portfolio en función de la ponderación que le asignamos.  
+<b>
+
+```{r cinco,  echo=FALSE, warning=FALSE, message=FALSE, tidy=TRUE}
+
+asignacion_etf <- c(rep(1/6, 6))
+
+
+Port_Ret_men <- Retf_diario %>%
+  tq_portfolio(assets_col = symbol,
+               returns_col = Ra,
+               weights = asignacion_etf,
+               col_rename = "Ra")
+
+Port_Ret_men %>%
+    ggplot(aes(x = date, y = Ra)) +
+    geom_line(stat = "identity", width = 10) +
+    labs(title = "Retornos diarios",
+         subtitle = "Portfolio Seleccionado",
+         x = "", y = "Retornos diarios") +
+    geom_smooth(method = "lm") +
+    theme_tq() +
+    scale_color_tq() +
+    scale_y_continuous(labels = scales::percent)
+
+
+```
+
+Qué hubiese pasado si invertíamos $10,000. en ese portfolio en la fecha de inicio.  
+<b>
+
+```{r seis, echo=FALSE, warning=FALSE, message=FALSE, tidy=TRUE}
+Port_Evol <- Retf_diario %>% 
+  tq_portfolio(assets_col = symbol,
+               returns_col = Ra,
+               weights = asignacion_etf,
+               col_rename = "Evolucion",
+               wealth.index = TRUE) %>% 
+    mutate(Evolucion = Evolucion * 10000)
+
+
+Port_Evol %>%
+    ggplot(aes(x = date, y = Evolucion)) +
+    geom_line(size = 1) +
+    labs(title = "Evolución de Portfolio con Inversión en t0 de $10.000",
+         subtitle = "Portfolio Seleccionado",
+         x = "", y = "Acumulado") +
+    geom_smooth(method = "loess") +
+    theme_tq() +
+    scale_color_tq() +
+    scale_y_continuous(labels = scales::dollar)
+
+
+```
+<b>  
+Y acá vemos el gráfico de cuanto hubiese significado esa inversión.
+
+
+
+

@@ -36,13 +36,13 @@ Composición:
 ## 2019-01-01
 ## 2020-08-06
 ### End tabset
-ETF <- c("QQQ", "XLK", "SPY", "XLF", "ARKK", "WCLD")
+ETF <- c("QQQ", "XLK", "SPY", "XLF", "ARKK", "WCLD", "IGV")
 
 ```
 
 ```{r tres, echo=FALSE, warning=FALSE, message=FALSE, tidy=TRUE}
 
-fecha_inicio = "2019-01-01"
+fecha_inicio = "2018-01-01"
 fecha_fin = "2020-08-06"
 
 
@@ -85,7 +85,7 @@ Asignamos el portfolio en partes iguales (1/n) y graficamos los retornos del por
 
 ```{r cinco,  echo=FALSE, warning=FALSE, message=FALSE, tidy=TRUE}
 
-asignacion_etf <- c(rep(1/6, 6))
+asignacion_etf <- c(rep(1/length(ETF), length(ETF)))
 
 
 Port_Ret_men <- Retf_diario %>%

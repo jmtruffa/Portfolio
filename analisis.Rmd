@@ -26,7 +26,8 @@ Composición:
 - SPY
 - XLF
 - ARKK
-- WCLD 
+- WCLD
+- IGV
 
 
 

@@ -1,0 +1,206 @@
+---
+title: "Analisis de Extremos"
+output:
+  html_document:
+    df_print: paged
+---
+
+<br>
+
+```{r set,  echo = FALSE,  warning=FALSE, message=FALSE, tidy=TRUE}
+
+library(dplyr)
+library(tidyquant)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+
+ETF <- c("QQQ", "XLK", "SPY", "XLF", "ARKK", "WCLD", "IGV", "CSCO", "TSLA", "AMD")
+
+fecha_inicio = "2018-01-01"
+fecha_fin = "2020-08-13"
+min_porc = -0.035
+max_porc = 0.035
+
+Px_ETF <- ETF %>%
+    tq_get(get  = "stock.prices",
+           from = fecha_inicio,
+           to   = fecha_fin) %>%
+    group_by(symbol) 
+
+ruedas = Px_ETF %>% distinct(date) %>% summarise(Ruedas = n())
+
+# convierto los precios en retornos
+Retf_d <- Px_ETF %>% tq_transmute(select     = adjusted, 
+                 mutate_fun = periodReturn, 
+                 period     = "daily", 
+                 col_rename = "Ra")
+
+# le caclulo t+1, t+2 y t+3
+ retf_d_lagged <- Retf_d %>% 
+   mutate('t+1' = lead(Ra, n = 1),
+          't+2' = lead(Ra, n = 2),
+          't+3' = lead(Ra, n= 3))
+ 
+ # le filtro puntos extremos definidos arriba y abajo de 20%
+ retf_d_lagged <- retf_d_lagged %>%
+  filter(Ra < 0.20 & Ra > -0.20)
+
+```
+  
+
+- Parámetros
+<br>
+
+
+```{r defs, echo = FALSE, warning=FALSE, message=FALSE, tidy=TRUE}
+
+
+
+kable(bind_cols(fecha_inicio, fecha_fin, min_porc, max_porc), digits = 3, col.names = c("Fecha Inicio", "Fecha Fin", "Lim Inf", "Lim Sup")) %>% 
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "center")
+
+
+
+tabla <- retf_d_lagged %>%
+  group_by(symbol) %>% 
+  filter(Ra <= min_porc | Ra >= max_porc) %>% 
+  summarise(cantidad = n())
+  
+# poner un control porque ETF puede tener 
+
+tabla <- bind_cols(tabla, rep(0, nrow(tabla)),rep(0, nrow(tabla)), rep(0, nrow(tabla)),rep(0, nrow(tabla)),rep(0, nrow(tabla)),rep(0, nrow(tabla)),rep(0, nrow(tabla)),rep(0, nrow(tabla)),rep(0, nrow(tabla)),rep(0, nrow(tabla)),rep(0, nrow(tabla)) )
+colnames(tabla) <- c("symbol", "cantidad", "cambio1", "Subas", "Bajas", "Rat+1pos", "sdRat+1pos", "minRapos", "maxRapos", "Rat+1neg", "sdRat+1neg", "minRaneg", "maxRaneg")
+
+
+
+```
+  
+
+- Filtramos movimientos > 20% diario por considerarlos "errores" 
+  
+
+
+```{r function, echo=FALSE, message=FALSE, warning=FALSE, tidy=TRUE}
+
+
+
+# retf_d_lagged %>% group_by(symbol) %>% summarise(Obs = n(), min = min(Ra), max = max(Ra), mean = mean(Ra))
+# retf_d_lagged %>% group_by(symbol) %>% filter(Ra > 0.025 & 't+1' < 0 & 't+2' < 0 & 't+3' < 0) %>% summarise(Obs = n(), Mu.RndtoDiario = mean(Ra), Mu.RndtoDiario't+1' = mean('t+1'), .groups = "drop") 
+
+# vamos a graficar los retornos marcando aquellos días extremos
+
+retf_d_lagged %>% 
+  mutate(extremo = if_else((Ra <= min_porc | Ra >= max_porc),1,0)) %>%
+  ggplot(aes(x = date, y = Ra, colour = extremo, group = symbol))+
+  geom_line(stat = "identity", width = 10)+
+  labs(title = "Retornos Diarios", x = "", y = "Retornos diarios")+
+  theme_tq()+
+  scale_y_continuous(labels = scales::percent) + 
+  facet_wrap(~ symbol)
+````
+  
+<br>
+
+```{r function2, echo=FALSE, message=FALSE, warning=FALSE, tidy=TRUE}
+
+
+
+# Ahora vamos a ver los días extremos, cuantos hubo cambio de signo posterior
+# y lo aplicamos a tabla que es quien nos va a mostrar los resultados
+
+  #cambio de signo
+x <- 1
+repeat {
+tabla[tabla$symbol == ETF[x],3] <- retf_d_lagged %>%
+  filter(symbol == ETF[x]) %>% 
+  mutate(extremo = if_else((Ra <= min_porc | Ra >= max_porc),1,0), cambio1 = if_else(lead(Ra)*Ra < 0, 1, 0)) %>% 
+  filter(extremo == 1 & cambio1 == 1) %>%
+  summarise(Obs = n()) %>% 
+  ungroup() %>% select(-symbol)
+
+
+tabla[tabla$symbol == ETF[x],10:13] <- retf_d_lagged %>%
+  filter(symbol == ETF[x]) %>% 
+  mutate(extremo = if_else((Ra <= min_porc),1,0), cambio1 = if_else(lead(Ra)*Ra < 0, 1, 0)) %>% 
+  filter(extremo == 1 & cambio1 == 1) %>%
+  ungroup() %>% 
+  summarise(Ramedian = mean(`t+1`),
+            VolRa = sd(`t+1`, na.rm = TRUE),
+            Min = min(`t+1`, na.rm = TRUE),
+            Max = max(`t+1`, na.rm = TRUE))
+#colnames(tmp1) <- c("Rat+1neg", "sdRat+1neg", "minRaneg", "maxRaneg")
+#tabla[tabla$symbol == ETF[x],10:13] <- tmp1
+
+tabla[tabla$symbol == ETF[x],6:9] <- retf_d_lagged %>%
+  filter(symbol == ETF[x]) %>% 
+  mutate(extremo = if_else((Ra >= max_porc),1,0), cambio1 = if_else(lead(Ra)*Ra < 0, 1, 0)) %>% 
+  filter(extremo == 1 & cambio1 == 1) %>% 
+  ungroup() %>% 
+  summarise(Ramedian = mean(`t+1`, na.rm = TRUE),
+            VolRa = sd(`t+1`, na.rm = TRUE),
+            Min = min(`t+1`, na.rm = TRUE),
+            Max = max(`t+1`, na.rm = TRUE))
+#colnames(tmp2) <- c("Rat+1pos", "sdRat+1pos", "minRapos", "maxRapos")
+#tabla[tabla$symbol == ETF[x],6:9] <- tmp2
+
+
+# ahora vamos a ver la cantidad de subas y la de bajas y lo vamos a meter en la tabla
+# subas
+tabla[tabla$symbol == ETF[x],4] <- retf_d_lagged %>% 
+  filter(symbol == ETF[x] & Ra >= max_porc) %>%
+  summarise(Obs = n()) %>% 
+  ungroup() %>% select(-symbol) 
+
+#bajas
+tabla[tabla$symbol == ETF[x],5] <- retf_d_lagged %>% 
+  filter(symbol == ETF[x] & Ra <= min_porc) %>%
+  summarise(Obs = n()) %>% 
+  ungroup() %>% select(-symbol)
+
+
+
+x <- x + 1
+if (x > nrow(tabla)){
+  break
+}
+}
+
+tabla <- tabla %>%
+  mutate(`Porc Cambio` = cambio1 / cantidad) %>% 
+  select(1:2, 4:5, 3, 14, 6:13)
+
+# tabla %>%
+#   left_join(ruedas) %>% 
+#   kable(caption = "Los estadísticos son sobre los t+1 que fueron cambio de sign vs t+0", digits = c(rep(0, 5), 2, rep(4, 8)), col.names = c("Ticker", "Q", "Subas", "Bajas", "Cambio Signo", "%", "media.Ret (t+1) - Pos", "desvio.Ret(t+1) - Pos", "min.Ret(t+1) - Pos", "max.Ret(t+1) - Pos", "media.Ret (t+1) - Neg", "desvio.Ret(t+1) - Neg", "min.Ret(t+1) - Neg", "max.Ret(t+1) - Neg" )) %>% 
+#   kable_styling(bootstrap_options = "striped", full_width = F)
+
+tabla %>% 
+  left_join(ruedas) %>% 
+  select(symbol, Ruedas, cantidad, Subas, Bajas) %>% 
+  kable(caption ="Cantidad de ruedas, veces que se superó límite, subas y bajas", col.names = c("Ticker", "Ruedas", "Veces Superado", "Subas", "Bajas")) %>% 
+  kable_styling(bootstrap_options = "striped", full_width = F)
+
+tabla %>% 
+  left_join(ruedas) %>% 
+  select(symbol, cantidad, 5:14) %>% 
+  kable(caption = "Los estadísticos son sobre los t+1 que fueron cambio de sign vs t+0", digits = c(rep(0,3), rep(4, 12)), col.names = c("Ticker", "Q", "Cambio Signo", "%", "media.Ret (t+1) - Pos", "desvio.Ret(t+1) - Pos", "min.Ret(t+1) - Pos", "max.Ret(t+1) - Pos", "media.Ret (t+1) - Neg", "desvio.Ret(t+1) - Neg", "min.Ret(t+1) - Neg", "max.Ret(t+1) - Neg" )) %>% 
+  kable_styling(bootstrap_options = "striped", full_width = F) %>% 
+  add_header_above(c(" " = 4, "Retorno en T+0 > 0" = 4, "Retorno en T+0 < 0" = 4))
+````
+<br>
+
+Ruedas de resultados superiores al límite y su correspondiente resultado en t+1
+
+```{r function3, echo=FALSE, message=FALSE, warning=FALSE, tidy=TRUE}
+ retf_d_lagged %>%
+   mutate(extremo = if_else((Ra <= min_porc | Ra >= max_porc),1,0), cambio1 = if_else(lead(Ra)*Ra < 0, 1, 0)) %>% 
+   filter(extremo == 1 & cambio1 == 1) %>%
+   arrange(symbol, date) %>% 
+   select(date, Ra, 't+1')
+
+```
+
+
+
+

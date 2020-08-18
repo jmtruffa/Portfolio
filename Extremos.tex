@@ -1,0 +1,181 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Untitled},
+  pdfauthor={jmt},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage[table]{xcolor}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+
+\title{Untitled}
+\author{jmt}
+\date{8/9/2020}
+
+\begin{document}
+\maketitle
+
+\begin{itemize}
+\tightlist
+\item
+  Parámetros 
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{l|l|r|r}
+\hline
+Fecha Inicio & Fecha Fin & Lim Inf & Lim Sup\\
+\hline
+2016-01-01 & 2020-08-06 & -0.035 & 0.035\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+\tightlist
+\item
+  Filtramos movimientos \textgreater{} 20\% diario por considerarlos
+  ``errores''
+\end{itemize}
+
+\includegraphics{Extremos_files/figure-latex/function-1.pdf}
+
+\begin{table}
+
+\caption{\label{tab:function2}Cantidad de ruedas, veces que se superó límite, subas y bajas}
+\centering
+\begin{tabular}[t]{l|r|r|r|r}
+\hline
+Ticker & Ruedas & Veces Superado & Subas & Bajas\\
+\hline
+ARKK & 1156 & 74 & 36 & 38\\
+\hline
+IGV & 1156 & 45 & 21 & 24\\
+\hline
+QQQ & 1156 & 31 & 14 & 17\\
+\hline
+SPY & 1156 & 21 & 9 & 12\\
+\hline
+WCLD & 231 & 30 & 16 & 14\\
+\hline
+XLF & 1156 & 42 & 19 & 23\\
+\hline
+XLK & 1156 & 41 & 16 & 25\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+
+\caption{\label{tab:function2}Los estadísticos son sobre los t+1 que fueron cambio de sign vs t+0}
+\centering
+\begin{tabular}[t]{l|r|r|r|r|r|r|r|r|r|r|r}
+\hline
+Ticker & Q & Cambio Signo & \% & media.Ret (t+1) - Pos & desvio.Ret(t+1) - Pos & min.Ret(t+1) - Pos & max.Ret(t+1) - Pos & media.Ret (t+1) - Neg & desvio.Ret(t+1) - Neg & min.Ret(t+1) - Neg & max.Ret(t+1) - Neg\\
+\hline
+ARKK & 74 & 41 & 0.5541 & -0.0306 & 0.0391 & -0.1557 & -0.0013 & 0.0251 & 0.0210 & 0.0041 & 0.0899\\
+\hline
+IGV & 45 & 32 & 0.7111 & -0.0281 & 0.0288 & -0.1177 & -0.0010 & 0.0298 & 0.0256 & 0.0045 & 0.0977\\
+\hline
+QQQ & 31 & 25 & 0.8065 & -0.0293 & 0.0321 & -0.1198 & -0.0004 & 0.0288 & 0.0273 & 0.0007 & 0.0847\\
+\hline
+SPY & 21 & 14 & 0.6667 & -0.0501 & 0.0306 & -0.1094 & -0.0286 & 0.0329 & 0.0281 & 0.0021 & 0.0855\\
+\hline
+WCLD & 30 & 16 & 0.5333 & -0.0368 & 0.0306 & -0.0944 & -0.0033 & 0.0290 & 0.0213 & 0.0043 & 0.0762\\
+\hline
+XLF & 42 & 23 & 0.5476 & -0.0487 & 0.0394 & -0.1371 & -0.0158 & 0.0402 & 0.0403 & 0.0044 & 0.1316\\
+\hline
+XLK & 41 & 33 & 0.8049 & -0.0315 & 0.0344 & -0.1381 & -0.0013 & 0.0318 & 0.0286 & 0.0012 & 0.1173\\
+\hline
+\end{tabular}
+\end{table}
+
+Ruedas de resultados superiores al límite y su correspondiente resultado
+en t+1
+
+\begin{verbatim}
+## # A tibble: 184 x 4
+## # Groups:   symbol [7]
+##    symbol date            Ra    `t+1`
+##    <chr>  <date>       <dbl>    <dbl>
+##  1 ARKK   2016-01-11 -0.0351  0.0146 
+##  2 ARKK   2016-01-15 -0.0394  0.0104 
+##  3 ARKK   2016-02-08 -0.0452  0.00405
+##  4 ARKK   2016-02-17  0.0373 -0.00372
+##  5 ARKK   2016-04-29 -0.0365  0.00636
+##  6 ARKK   2016-06-27 -0.0369  0.0240 
+##  7 ARKK   2017-01-04  0.0452 -0.00983
+##  8 ARKK   2017-05-17 -0.0353  0.0291 
+##  9 ARKK   2017-12-18  0.0388 -0.0213 
+## 10 ARKK   2018-02-05 -0.0354  0.0234 
+## # ... with 174 more rows
+\end{verbatim}
+
+\end{document}
